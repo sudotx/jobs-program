@@ -6,17 +6,20 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-freelance_escrow = "C8GtLx57Yw2ye31GWEKREdM3s12mJhpgjWzj1j1srCAg"
+freelance_escrow = "wAid3rkaMeJghkY1okUzBUU4ewsPF1A5nxoJxJHwKyM"
+
+[programs.devnet]
+freelance_escrow = "wAid3rkaMeJghkY1okUzBUU4ewsPF1A5nxoJxJHwKyM"
 
 [registry]
-url = "https://api.apr.dev"
+url = "https://devnet.helius-rpc.com/?api-key=cdcca2fb-c850-4541-9e78-08a4cbd56657"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [test.validator]
-rpc_port = 8898
+rpc_port = 8899
 faucet_port = 9901
 bind_address = "127.0.0.1"
 
