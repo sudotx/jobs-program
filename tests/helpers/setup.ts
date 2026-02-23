@@ -72,6 +72,9 @@ export async function createJob(
   const [clientAccount] = getClientAccountPDA(program.programId, client.publicKey);
 
   const existingClient = await program.account.clientAccount.fetchNullable(clientAccount);
+
+  console.log({ existingClient });
+
   const nonce = existingClient ? existingClient.jobNonce.toNumber() : 0;
 
   const [jobPda] = getJobPDA(program.programId, client.publicKey, nonce);

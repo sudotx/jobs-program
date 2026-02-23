@@ -1,0 +1,142 @@
+{
+  "clientRemote": "",
+  "gitRemote": "",
+  "gitSha": "",
+  "treeEntries": [
+    {
+      "label": "careful to validate the nonce for a clients job to prevent possible overwriting of jobs",
+      "entryType": 1,
+      "author": "macbook",
+      "details": {
+        "severity": "",
+        "difficulty": "",
+        "type": "",
+        "description": "",
+        "exploit": "",
+        "recommendation": "Short term, \nLong term, \n"
+      },
+      "locations": [
+        {
+          "path": "tests/helpers/pda.ts",
+          "startLine": 7,
+          "endLine": 8,
+          "label": "",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "label": "Consider if lien_initiator needs to be a Pubkey or if it could be a simple Enum (e.g., LienSource::Client, LienSource::Freelancer, LienSource::None). This saves space (1 byte vs 32 bytes) and makes logic checks explicit, preventing a scenario where a random third party is somehow written to this field.",
+      "entryType": 1,
+      "author": "macbook",
+      "details": {
+        "severity": "",
+        "difficulty": "",
+        "type": "",
+        "description": "another case,  Zero-Initialization Risks\n\nObservation: When a dispute is resolved, does lien_initiator get cleared (zeroed out)?\nRisk: If the logic checks if lien_initiator != Pubkey::default(), ensure that your \"resolve\" instruction properly resets this field. Otherwise, a job might get stuck in a \"pseudo-dispute\" state if the status changes but the initiator field remains dirty",
+        "exploit": "",
+        "recommendation": "Short term, \nLong term, \n"
+      },
+      "locations": [
+        {
+          "path": "programs/freelance_escrow/src/state/job_account.rs",
+          "startLine": 14,
+          "endLine": 14,
+          "label": "",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "label": "issue here is the conflicting use of time (Wall clock vs Block height as used in job account) its not advised to mix time units, sticking to one unit for logic onchain/ maybe converting for use offchain ",
+      "entryType": 0,
+      "author": "macbook",
+      "details": {
+        "severity": "",
+        "difficulty": "",
+        "type": "",
+        "description": "",
+        "exploit": "",
+        "recommendation": "Short term, \nLong term, \n"
+      },
+      "locations": [
+        {
+          "path": "programs/freelance_escrow/src/state/provider_account.rs",
+          "startLine": 11,
+          "endLine": 11,
+          "label": "",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "label": "to avoid wash trading scenarios, likely false inflation of this valie and reputation score factor in fees or better mitigation for this",
+      "entryType": 0,
+      "author": "macbook",
+      "details": {
+        "severity": "",
+        "difficulty": "",
+        "type": "",
+        "description": "",
+        "exploit": "",
+        "recommendation": "Short term, \nLong term, \n"
+      },
+      "locations": [
+        {
+          "path": "programs/freelance_escrow/src/state/provider_account.rs",
+          "startLine": 6,
+          "endLine": 6,
+          "label": "",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "label": "why is platform config mutable here? when job gets created",
+      "entryType": 1,
+      "author": "macbook",
+      "details": {
+        "severity": "",
+        "difficulty": "",
+        "type": "",
+        "description": "",
+        "exploit": "",
+        "recommendation": "Short term, \nLong term, \n"
+      },
+      "locations": [
+        {
+          "path": "programs/freelance_escrow/src/instructions/create_job.rs",
+          "startLine": 19,
+          "endLine": 24,
+          "label": "",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "label": "why empty if job is open when trying to cancel",
+      "entryType": 1,
+      "author": "macbook",
+      "details": {
+        "severity": "",
+        "difficulty": "",
+        "type": "",
+        "description": "",
+        "exploit": "",
+        "recommendation": "Short term, \nLong term, \n"
+      },
+      "locations": [
+        {
+          "path": "programs/freelance_escrow/src/instructions/cancel_job.rs",
+          "startLine": 27,
+          "endLine": 27,
+          "label": "",
+          "description": ""
+        }
+      ]
+    }
+  ],
+  "auditedFiles": [],
+  "partiallyAuditedFiles": [],
+  "resolvedEntries": []
+}

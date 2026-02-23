@@ -15,7 +15,7 @@ freelance_escrow = "wAid3rkaMeJghkY1okUzBUU4ewsPF1A5nxoJxJHwKyM"
 url = "https://devnet.helius-rpc.com/?api-key=cdcca2fb-c850-4541-9e78-08a4cbd56657"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [test.validator]
