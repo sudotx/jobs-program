@@ -4,13 +4,13 @@ use crate::errors::EscrowError;
 use crate::state::{ClientAccount, JobAccount, PlatformConfig};
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct CreateJobParams {
-    pub amount: u64,
+pub struct CreateMilestoneJobParams {
+    pub milestone_amounts: Vec<u64>,
     pub expiry_slot: u64,
 }
 
 #[derive(Accounts)]
-pub struct CreateJob<'info> {
+pub struct CreateMilestoneJob<'info> {
     #[account(mut)]
     pub client: Signer<'info>,
 
@@ -42,6 +42,6 @@ pub struct CreateJob<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(_ctx: Context<CreateJob>, _params: CreateJobParams) -> Result<()> {
+pub fn handler(_ctx: Context<CreateMilestoneJob>, _params: CreateMilestoneJobParams) -> Result<()> {
     err!(EscrowError::TokenPaymentRequired)
 }

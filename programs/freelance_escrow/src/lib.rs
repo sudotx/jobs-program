@@ -36,15 +36,42 @@ pub mod freelance_escrow {
         instructions::create_job::handler(ctx, params)
     }
 
+    pub fn create_milestone_job(
+        ctx: Context<CreateMilestoneJob>,
+        params: CreateMilestoneJobParams,
+    ) -> Result<()> {
+        instructions::create_milestone_job::handler(ctx, params)
+    }
+
+    pub fn create_token_job(
+        ctx: Context<CreateTokenJob>,
+        params: CreateTokenJobParams,
+    ) -> Result<()> {
+        instructions::create_token_job::handler(ctx, params)
+    }
+
+    pub fn create_token_milestone_job(
+        ctx: Context<CreateTokenMilestoneJob>,
+        params: CreateTokenMilestoneJobParams,
+    ) -> Result<()> {
+        instructions::create_token_milestone_job::handler(ctx, params)
+    }
+
     pub fn accept_job(ctx: Context<AcceptJob>) -> Result<()> {
         instructions::accept_job::handler(ctx)
     }
 
-    pub fn complete_job(ctx: Context<CompleteJob>) -> Result<()> {
+    pub fn complete_job<'info>(ctx: Context<'_, '_, '_, 'info, CompleteJob<'info>>) -> Result<()> {
         instructions::complete_job::handler(ctx)
     }
 
-    pub fn cancel_job(ctx: Context<CancelJob>) -> Result<()> {
+    pub fn complete_milestone<'info>(
+        ctx: Context<'_, '_, '_, 'info, CompleteMilestone<'info>>,
+    ) -> Result<()> {
+        instructions::complete_milestone::handler(ctx)
+    }
+
+    pub fn cancel_job<'info>(ctx: Context<'_, '_, '_, 'info, CancelJob<'info>>) -> Result<()> {
         instructions::cancel_job::handler(ctx)
     }
 
@@ -52,18 +79,23 @@ pub mod freelance_escrow {
         instructions::initiate_lien::handler(ctx)
     }
 
-    pub fn resolve_lien(ctx: Context<ResolveLien>, params: ResolveLienParams) -> Result<()> {
+    pub fn resolve_lien<'info>(
+        ctx: Context<'_, '_, '_, 'info, ResolveLien<'info>>,
+        params: ResolveLienParams,
+    ) -> Result<()> {
         instructions::resolve_lien::handler(ctx, params)
     }
 
-    pub fn mutual_resolve_lien(
-        ctx: Context<MutualResolveLien>,
+    pub fn mutual_resolve_lien<'info>(
+        ctx: Context<'_, '_, '_, 'info, MutualResolveLien<'info>>,
         params: ResolveLienParams,
     ) -> Result<()> {
         instructions::mutual_resolve_lien::handler(ctx, params)
     }
 
-    pub fn force_resolve_lien(ctx: Context<ForceResolveLien>) -> Result<()> {
+    pub fn force_resolve_lien<'info>(
+        ctx: Context<'_, '_, '_, 'info, ForceResolveLien<'info>>,
+    ) -> Result<()> {
         instructions::force_resolve_lien::handler(ctx)
     }
 

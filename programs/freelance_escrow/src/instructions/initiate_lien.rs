@@ -26,6 +26,11 @@ pub struct InitiateLien<'info> {
 }
 
 pub fn handler(ctx: Context<InitiateLien>) -> Result<()> {
+    require!(
+        !ctx.accounts.platform_config.paused,
+        EscrowError::PlatformPaused
+    );
+
     let signer = ctx.accounts.signer.key();
     let job_account = &mut ctx.accounts.job_account;
 

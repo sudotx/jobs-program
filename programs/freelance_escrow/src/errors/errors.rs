@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum EscrowError {
-    #[msg("Platform is paused — no new jobs can be created")]
+    #[msg("Platform is paused — mutating operations are disabled")]
     PlatformPaused,
 
     #[msg("Job amount must be greater than zero")]
@@ -70,4 +70,58 @@ pub enum EscrowError {
 
     #[msg("Cannot cancel a job under active dispute")]
     CannotCancelDuringLien,
+
+    #[msg("Job client cannot accept their own job")]
+    SelfAcceptNotAllowed,
+
+    #[msg("Invalid milestone configuration")]
+    InvalidMilestoneConfig,
+
+    #[msg("This operation requires a milestone-based job")]
+    NotMilestoneJob,
+
+    #[msg("Milestone-based jobs must be settled via milestone completion")]
+    MilestoneFlowRequired,
+
+    #[msg("Missing required token accounts for token escrow flow")]
+    MissingTokenAccounts,
+
+    #[msg("Invalid token account provided")]
+    InvalidTokenAccount,
+
+    #[msg("Invalid token program provided")]
+    InvalidTokenProgram,
+
+    #[msg("Invalid payment mint for this operation")]
+    InvalidPaymentMint,
+
+    #[msg("Token-denominated payments are required")]
+    TokenPaymentRequired,
+
+    #[msg("Payment mint is not allowed by platform policy")]
+    PaymentMintNotAllowed,
+
+    #[msg("Payment mint list is full")]
+    PaymentMintListFull,
+
+    #[msg("Payment mint not found in policy list")]
+    PaymentMintNotFound,
+
+    #[msg("Invalid staking token mint")]
+    InvalidStakingTokenMint,
+
+    #[msg("Staking token mint is not configured")]
+    StakingTokenMintUnset,
+
+    #[msg("Payment mint cannot be the same as staking token mint")]
+    PaymentMintConflictsWithStakingMint,
+
+    #[msg("Dispute slash basis points must be < 10000")]
+    InvalidDisputeSlashBps,
+
+    #[msg("Provider does not meet minimum stake requirement for job acceptance")]
+    InsufficientStakeForJobAcceptance,
+
+    #[msg("Provider account age is below the minimum requirement for job acceptance")]
+    ProviderTooNewForJobAcceptance,
 }

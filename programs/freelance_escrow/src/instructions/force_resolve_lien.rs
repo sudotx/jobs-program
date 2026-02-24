@@ -2,8 +2,8 @@ use anchor_lang::prelude::*;
 
 use crate::errors::EscrowError;
 use crate::events::LienForceResolved;
-use crate::instructions::resolve_lien::settle_lien;
-use crate::state::{JobAccount, JobStatus, ProviderAccount};
+use crate::instructions::resolve_lien::{disburse_settlement, settle_lien};
+use crate::state::{JobAccount, JobStatus, PlatformConfig, ProviderAccount};
 
 #[derive(Accounts)]
 pub struct ForceResolveLien<'info> {
@@ -39,6 +39,12 @@ pub struct ForceResolveLien<'info> {
     )]
     pub provider_account: Account<'info, ProviderAccount>,
 
+    #[account(
+        seeds = [b"platform", platform_config.admin.as_ref()],
+        bump = platform_config.bump,
+    )]
+    pub platform_config: Account<'info, PlatformConfig>,
+
     /// CHECK: validated against `job_account.treasury_snapshot`
     #[account(
         mut,
@@ -47,21 +53,35 @@ pub struct ForceResolveLien<'info> {
     pub treasury: UncheckedAccount<'info>,
 }
 
-pub fn handler(ctx: Context<ForceResolveLien>) -> Result<()> {
+pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, ForceResolveLien<'info>>) -> Result<()> {
+    require!(
+        !ctx.accounts.platform_config.paused,
+        EscrowError::PlatformPaused
+    );
+
     let slot = Clock::get()?.slot;
     require!(
         slot > ctx.accounts.job_account.lien_deadline_slot,
         EscrowError::LienNotExpired
     );
 
-    let freelancer_share_bps: u16 = 5_000;
+    let freelancer_share_bps = ctx
+        .accounts
+        .platform_config
+        .force_resolution_freelancer_share_bps;
     let outcome = settle_lien(
         &mut ctx.accounts.job_account,
         &mut ctx.accounts.provider_account,
+        &ctx.accounts.platform_config,
         freelancer_share_bps,
+    )?;
+    disburse_settlement(
+        &ctx.accounts.job_account,
+        &outcome,
         &ctx.accounts.client_wallet.to_account_info(),
         &ctx.accounts.freelancer_wallet.to_account_info(),
         &ctx.accounts.treasury.to_account_info(),
+        ctx.remaining_accounts,
     )?;
 
     emit!(LienForceResolved {
@@ -69,6 +89,8 @@ pub fn handler(ctx: Context<ForceResolveLien>) -> Result<()> {
         freelancer_share_bps,
         freelancer_payout: outcome.freelancer_payout,
         client_refund: outcome.client_refund,
+        slash_bps_applied: outcome.slash_bps_applied,
+        slash_amount: outcome.slash_amount,
     });
 
     Ok(())

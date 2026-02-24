@@ -1,18 +1,17 @@
 use anchor_lang::prelude::*;
 
 use crate::errors::EscrowError;
-use crate::events::JobCompleted;
+use crate::events::JobMilestoneCompleted;
 use crate::state::{JobAccount, JobStatus, PlatformConfig, ProviderAccount};
 use crate::utils::{
-    bps_amount, calculate_reputation, close_vault, is_token_job, parse_complete_token_accounts,
-    transfer_from_vault,
+    bps_amount, calculate_reputation, close_program_account, close_vault, is_token_job,
+    parse_complete_token_accounts, transfer_from_vault,
 };
 
 #[derive(Accounts)]
-pub struct CompleteJob<'info> {
+pub struct CompleteMilestone<'info> {
     #[account(
         mut,
-        close = client,
         seeds = [b"job", job_account.client.as_ref(), &job_account.job_nonce.to_le_bytes()],
         bump = job_account.bump,
         constraint = job_account.status == JobStatus::Active @ EscrowError::InvalidJobStatus,
@@ -52,14 +51,10 @@ pub struct CompleteJob<'info> {
     pub treasury: UncheckedAccount<'info>,
 }
 
-pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, CompleteJob<'info>>) -> Result<()> {
+pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, CompleteMilestone<'info>>) -> Result<()> {
     require!(
         !ctx.accounts.platform_config.paused,
         EscrowError::PlatformPaused
-    );
-    require!(
-        ctx.accounts.job_account.milestone_amounts.is_empty(),
-        EscrowError::MilestoneFlowRequired
     );
 
     let clock = Clock::get()?;
@@ -68,31 +63,21 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, CompleteJob<'info>>) -> Re
         EscrowError::JobExpired
     );
 
-    let fee = bps_amount(
-        ctx.accounts.job_account.amount,
-        ctx.accounts.job_account.fee_bps_snapshot,
-    )?;
-    let payout = ctx
-        .accounts
-        .job_account
-        .amount
+    let milestone_index = usize::from(ctx.accounts.job_account.next_milestone_index);
+    require!(
+        !ctx.accounts.job_account.milestone_amounts.is_empty(),
+        EscrowError::NotMilestoneJob
+    );
+    require!(
+        milestone_index < ctx.accounts.job_account.milestone_amounts.len(),
+        EscrowError::InvalidJobStatus
+    );
+
+    let milestone_amount = ctx.accounts.job_account.milestone_amounts[milestone_index];
+    let fee = bps_amount(milestone_amount, ctx.accounts.job_account.fee_bps_snapshot)?;
+    let payout = milestone_amount
         .checked_sub(fee)
         .ok_or_else(|| error!(EscrowError::MathOverflow))?;
-
-    if ctx.accounts.job_account.total_amount
-        >= ctx.accounts.platform_config.min_reputation_job_amount
-    {
-        let provider_account = &mut ctx.accounts.provider_account;
-        provider_account.total_jobs_completed = provider_account
-            .total_jobs_completed
-            .checked_add(1)
-            .ok_or_else(|| error!(EscrowError::MathOverflow))?;
-        provider_account.reputation_score = calculate_reputation(
-            provider_account.total_jobs_completed,
-            provider_account.total_jobs_disputed_lost,
-            provider_account.total_staked,
-        )?;
-    }
 
     let job_key = ctx.accounts.job_account.key();
     let job_client = ctx.accounts.job_account.client;
@@ -104,8 +89,6 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, CompleteJob<'info>>) -> Re
         is_token_job(payment_mint),
         EscrowError::TokenPaymentRequired
     );
-
-    ctx.accounts.job_account.status = JobStatus::Completed;
 
     let job_info = ctx.accounts.job_account.to_account_info();
     let token_accounts = parse_complete_token_accounts(
@@ -138,21 +121,74 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, CompleteJob<'info>>) -> Re
         signer_seeds,
         fee,
     )?;
-    close_vault(
-        token_accounts.token_program,
-        token_accounts.token_vault,
-        &ctx.accounts.client.to_account_info(),
-        &job_info,
-        signer_seeds,
-    )?;
 
-    emit!(JobCompleted {
+    let milestone_index_u8: u8 = milestone_index
+        .try_into()
+        .map_err(|_| error!(EscrowError::MathOverflow))?;
+    let (remaining_amount, completed_all) = {
+        let job_account = &mut ctx.accounts.job_account;
+        job_account.amount = job_account
+            .amount
+            .checked_sub(milestone_amount)
+            .ok_or_else(|| error!(EscrowError::MathOverflow))?;
+        job_account.next_milestone_index = job_account
+            .next_milestone_index
+            .checked_add(1)
+            .ok_or_else(|| error!(EscrowError::MathOverflow))?;
+
+        let completed_all =
+            usize::from(job_account.next_milestone_index) == job_account.milestone_amounts.len();
+        if completed_all {
+            job_account.status = JobStatus::Completed;
+        }
+
+        (job_account.amount, completed_all)
+    };
+
+    if completed_all {
+        if ctx.accounts.job_account.total_amount
+            >= ctx.accounts.platform_config.min_reputation_job_amount
+        {
+            let provider_account = &mut ctx.accounts.provider_account;
+            provider_account.total_jobs_completed = provider_account
+                .total_jobs_completed
+                .checked_add(1)
+                .ok_or_else(|| error!(EscrowError::MathOverflow))?;
+            provider_account.reputation_score = calculate_reputation(
+                provider_account.total_jobs_completed,
+                provider_account.total_jobs_disputed_lost,
+                provider_account.total_staked,
+            )?;
+        }
+    }
+
+    emit!(JobMilestoneCompleted {
         pda: job_key,
         client: ctx.accounts.client.key(),
         freelancer: ctx.accounts.freelancer_wallet.key(),
+        milestone_index: milestone_index_u8,
+        milestone_amount,
         payout,
         fee,
+        remaining_amount,
+        completed_all,
     });
+
+    if completed_all {
+        let nonce_bytes = job_nonce.to_le_bytes();
+        let bump = [job_bump];
+        let signer_seed_components: &[&[u8]] = &[b"job", job_client.as_ref(), &nonce_bytes, &bump];
+        let signer_seeds: &[&[&[u8]]] = &[signer_seed_components];
+
+        close_vault(
+            token_accounts.token_program,
+            token_accounts.token_vault,
+            &ctx.accounts.client.to_account_info(),
+            &job_info,
+            signer_seeds,
+        )?;
+        close_program_account(&job_info, &ctx.accounts.client.to_account_info())?;
+    }
 
     Ok(())
 }

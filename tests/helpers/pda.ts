@@ -34,6 +34,16 @@ export function getStakePDA(
   );
 }
 
+export function getStakeVaultPDA(
+  programId: PublicKey,
+  stakingAccount: PublicKey,
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("stake-vault"), stakingAccount.toBuffer()],
+    programId,
+  );
+}
+
 export function getPlatformConfigPDA(
   programId: PublicKey,
   admin: PublicKey,
@@ -50,6 +60,13 @@ export function getClientAccountPDA(
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("client"), client.toBuffer()],
+    programId,
+  );
+}
+
+export function getVaultPDA(programId: PublicKey, jobAccount: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("vault"), jobAccount.toBuffer()],
     programId,
   );
 }

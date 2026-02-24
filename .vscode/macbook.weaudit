@@ -134,6 +134,28 @@
           "description": ""
         }
       ]
+    },
+    {
+      "label": "possible issue, with use of unix timestamp here, while using block height in other places",
+      "entryType": 1,
+      "author": "macbook",
+      "details": {
+        "severity": "",
+        "difficulty": "",
+        "type": "",
+        "description": "",
+        "exploit": "",
+        "recommendation": "Short term, \nLong term, \n"
+      },
+      "locations": [
+        {
+          "path": "programs/freelance_escrow/src/instructions/register_provider.rs",
+          "startLine": 30,
+          "endLine": 30,
+          "label": "",
+          "description": ""
+        }
+      ]
     }
   ],
   "auditedFiles": [],
