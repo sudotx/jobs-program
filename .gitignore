@@ -7,3 +7,6 @@ test-ledger
 .yarn
 .env
 .env.local
+
+.surfpool/logs
+runbooks

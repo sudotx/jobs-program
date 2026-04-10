@@ -8,7 +8,7 @@ pub mod utils;
 
 use instructions::*;
 
-declare_id!("wAid3rkaMeJghkY1okUzBUU4ewsPF1A5nxoJxJHwKyM");
+declare_id!("8GSCuw5CG1dyJ9f1TYcbSsApneNvg6rZSc8ZD1R4k3Hf");
 
 #[program]
 pub mod freelance_escrow {

@@ -581,9 +581,12 @@ export async function warpToSlot(
   slot: number,
 ): Promise<boolean> {
   const conn = provider.connection as any;
-  for (const method of ["warp_slot", "warpSlot"]) {
+  for (const method of ["surfnet_timeTravel", "warp_slot", "warpSlot"]) {
     try {
-      const response = await conn._rpcRequest(method, [slot]);
+      const params = method === "surfnet_timeTravel"
+        ? [{ absoluteSlot: slot }]
+        : [slot];
+      const response = await conn._rpcRequest(method, params);
       if (!response?.error) {
         return true;
       }
